@@ -2,6 +2,7 @@
 Main Telegram Random Chat Bot Application
 """
 import logging
+import os
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import (
     Application,
@@ -297,12 +298,24 @@ def main():
     # Error handler
     application.add_error_handler(error_handler)
     
-    # Start bot
-    logger.info("Bot started successfully!")
-    print("🤖 Bot is running...")
-    print(f"👤 Admin IDs: {config.ADMIN_IDS}")
+    # Check for Webhook configuration (for Render/Cloud)
+    PORT = int(os.environ.get('PORT', '8080'))
+    WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
     
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    if WEBHOOK_URL:
+        # Start with Webhook
+        logger.info(f"Starting bot in Webhook mode on port {PORT}")
+        application.run_webhook(
+            listen="0.0.0.0",
+            port=PORT,
+            url_path=config.BOT_TOKEN,
+            webhook_url=f"{WEBHOOK_URL}/{config.BOT_TOKEN}"
+        )
+    else:
+        # Start with Polling
+        logger.info("Starting bot in Polling mode")
+        print("🤖 Bot is running on Polling...")
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
 if __name__ == '__main__':
